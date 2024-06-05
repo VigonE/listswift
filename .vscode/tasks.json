@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Launch Browser",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "-m",
+                "webbrowser",
+                "-t",
+                "http://127.0.0.1:5000"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
