@@ -1,5 +1,6 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import os
+import uuid
 from dotenv import load_dotenv
 
 app = Flask(__name__)
@@ -23,6 +24,15 @@ def firebase_config():
         'appId': os.getenv('FIREBASE_APP_ID'),
     }
     return jsonify(config)
+
+@app.route("/generate-uuid", methods=['POST'])
+def generate_uuid():
+    new_uuid = str(uuid.uuid4())
+    return jsonify({"uuid": new_uuid})
+
+@app.route("/<uuid:list_uuid>")
+def list_page(list_uuid):
+    return render_template('todolist.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
