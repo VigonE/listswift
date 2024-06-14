@@ -491,7 +491,13 @@
                 padding: 5px;
                 text-align: center;
             }
+
+            .hidden {
+                display: none;
+            }
+            
     </style>
+</head>
 
 <body>
     <div id="app">
@@ -501,19 +507,18 @@
             <button id="load-list">Load/Create List</button>
         </div>
         <div id="todo-list" style="display: none;">
-<div class="header">
-    <div>
-        <h1 id="list-title">ToDo List</h1>
-        <p id="list-uuid-display" style="font-size: 0.75em; color: grey; margin: 0;"></p>
-    </div>
-    <div>
-        <span id="star-button" class="icon">⭐</span>
-        <span id="change-list" class="icon">🔚</span>
-        <span id="home-button" class="icon">🏠</span>
-        <span id="settings-icon" class="settings-icon">⚙️</span>
-        <span id="share-button" class="icon">🔗</span>
-    </div>
-</div>
+            <div class="header">
+                <div>
+                    <h1 id="list-title">ToDo List</h1>
+                    <p id="list-uuid-display" style="font-size: 0.75em; color: grey; margin: 0;"></p>
+                </div>
+                <div>
+                    <span id="star-button" class="icon">⭐</span>
+                    <span id="change-list" class="icon">🔚</span>
+                    <span id="home-button" class="icon">🏠</span>
+                    <span id="settings-icon" class="settings-icon">⚙️</span>
+                    <span id="share-button" class="icon">🔗</span>
+                </div>
             </div>
             <div class="add-task-container">
                 <input type="text" id="new-task" placeholder="New Task/List">
@@ -626,10 +631,11 @@
         </div>
     </div>
 
-
-    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-database.js"></script>
-    <script>
+    
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.2/firebase-database.js"></script>
+<script>
+    
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/firebase-config')
         .then(response => response.json())
@@ -637,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
             firebase.initializeApp(config);
             const database = firebase.database();
 
-            const app = document.getElementById('app');
             const loginDiv = document.getElementById('login');
             const todoListDiv = document.getElementById('todo-list');
             const listNameInput = document.getElementById('list-name');
@@ -670,22 +675,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const shareButton = document.getElementById('share-button');
 
-            shareButton.addEventListener('click', () => {
-                if (navigator.share) {
-                    const listUUID = currentList;
-                    const url = `${window.location.origin}/${encodeURIComponent(listUUID)}`;
-                    navigator.share({
-                        title: `Check out my ToDo List`,
-                        url: url
-                    }).then(() => {
-                        console.log('Successfully shared');
-                    }).catch((error) => {
-                        console.error('Error sharing:', error);
-                    });
-                } else {
-                    alert('Sharing not supported on this browser.');
-                }
-            });
+            if (shareButton) {
+                shareButton.addEventListener('click', () => {
+                    if (navigator.share) {
+                        const listUUID = currentList;
+                        const url = `${window.location.origin}/${encodeURIComponent(listUUID)}`;
+                        navigator.share({
+                            title: `Check out my ToDo List`,
+                            url: url
+                        }).then(() => {
+                            console.log('Successfully shared');
+                        }).catch((error) => {
+                            console.error('Error sharing:', error);
+                        });
+                    } else {
+                        alert('Sharing not supported on this browser.');
+                    }
+                });
+            }
 
             let selectedColor = 'rgb(128, 128, 128)';
             let selectedEditColor = selectedColor;
@@ -705,35 +712,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 grey: '#808080'
             };
 
-            colorOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    colorOptions.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedColor = getComputedStyle(option).backgroundColor;
-                    console.log('Selected color:', selectedColor);
+            if (colorOptions) {
+                colorOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        colorOptions.forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        selectedColor = getComputedStyle(option).backgroundColor;
+                        console.log('Selected color:', selectedColor);
 
-                    if (sortColorSlider.checked) {
-                        database.ref('todos/' + currentList).once('value', (snapshot) => {
-                            const tasks = snapshot.val().tasks;
-                            const colorOrder = snapshot.val().colorOrder || Object.keys(colors);
-                            renderTasksAndLists(tasks, colorOrder);
-                        });
-                    }
+                        if (sortColorSlider && sortColorSlider.checked) {
+                            database.ref('todos/' + currentList).once('value', (snapshot) => {
+                                const tasks = snapshot.val().tasks;
+                                const colorOrder = snapshot.val().colorOrder || Object.keys(colors);
+                                renderTasksAndLists(tasks, colorOrder);
+                            });
+                        }
+                    });
                 });
-            });
+            }
 
-            colorOptionsModal.forEach(option => {
-                option.addEventListener('click', () => {
-                    colorOptionsModal.forEach(opt => opt.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedEditColor = getComputedStyle(option).backgroundColor;
-                    console.log('Selected edit color:', selectedEditColor);
+            if (colorOptionsModal) {
+                colorOptionsModal.forEach(option => {
+                    option.addEventListener('click', () => {
+                        colorOptionsModal.forEach(opt => opt.classList.remove('selected'));
+                        option.classList.add('selected');
+                        selectedEditColor = getComputedStyle(option).backgroundColor;
+                        console.log('Selected edit color:', selectedEditColor);
+                    });
                 });
-            });
+            }
 
             const loadList = (listUUID) => {
                 console.log(`Loading list: ${listUUID}`);
-                tasksUl.innerHTML = '';
+                if (tasksUl) {
+                    tasksUl.innerHTML = '';
+                }
 
                 if (currentListRef) {
                     currentListRef.off();
@@ -747,15 +760,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     let alias = data ? data.alias : listUUID;
                     let colorOrder = data ? data.colorOrder : Object.keys(colors);
                     let showLists = data ? data.showLists : true;
-                    sortListsSlider.checked = showLists;
+                    if (sortListsSlider) {
+                        sortListsSlider.checked = showLists;
+                    }
                     console.log('Tasks loaded:', tasks);
-                    listTitle.textContent = alias;
+                    if (listTitle) {
+                        listTitle.textContent = alias;
+                    }
 
                     // Set the UUID display
                     const uuidDisplay = document.getElementById('list-uuid-display');
-                    uuidDisplay.textContent = `UUID: ${listUUID}`;
+                    if (uuidDisplay) {
+                        uuidDisplay.textContent = `UUID: ${listUUID}`;
+                    }
 
                     renderTasksAndLists(tasks, lists, colorOrder, showLists);
+
+                    if (loginDiv) {
+                        loginDiv.style.display = 'none';
+                    }
+                    if (todoListDiv) {
+                        todoListDiv.style.display = 'block';
+                    }
+
                     updateStarButtonState(listUUID);
                 });
             };
@@ -769,12 +796,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     lists = [];
                 }
 
-                if (sortTasksSlider.checked) {
+                if (sortTasksSlider && sortTasksSlider.checked) {
                     tasks = tasks.map((task, index) => ({ ...task, originalIndex: index }));
                     tasks.sort((a, b) => a.task.localeCompare(b.task));
                 }
 
-                if (sortCompletedSlider.checked) {
+                if (sortCompletedSlider && sortCompletedSlider.checked) {
                     const colorPriority = colorOrder.reduce((acc, color, index) => {
                         acc[colors[color]] = index;
                         return acc;
@@ -791,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
 
-                if (sortColorSlider.checked) {
+                if (sortColorSlider && sortColorSlider.checked) {
                     const colorPriority = colorOrder.reduce((acc, color, index) => {
                         acc[colors[color]] = index;
                         return acc;
@@ -805,11 +832,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
 
-                if (sortDateSlider.checked) {
+                if (sortDateSlider && sortDateSlider.checked) {
                     tasks.reverse();
                 }
 
-                tasksUl.innerHTML = '';
+                if (tasksUl) {
+                    tasksUl.innerHTML = '';
+                }
                 if (showLists) {
                     lists.forEach((list, index) => {
                         const li = document.createElement('li');
@@ -844,12 +873,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         taskContainer.appendChild(editButton);
                         taskContainer.appendChild(deleteButton);
                         li.appendChild(taskContainer);
-                        tasksUl.appendChild(li);
+                        if (tasksUl) {
+                            tasksUl.appendChild(li);
+                        }
                     });
                 }
                 tasks.forEach((task, index) => {
                     const li = document.createElement('li');
-                    const actualIndex = (sortTasksSlider.checked || sortCompletedSlider.checked || sortColorSlider.checked || sortDateSlider.checked) ? task.originalIndex : index;
+                    const actualIndex = (sortTasksSlider && sortTasksSlider.checked) || (sortCompletedSlider && sortCompletedSlider.checked) || (sortColorSlider && sortColorSlider.checked) || (sortDateSlider && sortDateSlider.checked) ? task.originalIndex : index;
                     li.setAttribute('data-index', actualIndex);
                     const taskContainer = document.createElement('div');
                     taskContainer.className = 'task-container';
@@ -883,7 +914,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 opt.classList.remove('selected');
                             }
                         });
-                        modal.style.display = 'block';
+                        if (modal) {
+                            modal.style.display = 'block';
+                        }
                     });
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '✖';
@@ -895,7 +928,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     taskContainer.appendChild(editButton);
                     taskContainer.appendChild(deleteButton);
                     li.appendChild(taskContainer);
-                    tasksUl.appendChild(li);
+                    if (tasksUl) {
+                        tasksUl.appendChild(li);
+                    }
                 });
             };
 
@@ -916,10 +951,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         alias: alias
                     }).then(() => {
                         console.log(`List created with UUID: ${newUUID}`);
-                        loadList(newUUID);
                         localStorage.setItem('todoUUID', newUUID);
                         currentList = newUUID;
                         window.history.pushState({}, '', `/${newUUID}`);
+                        loadList(newUUID);
                     }).catch((error) => {
                         console.error(`Error creating list: ${newUUID}`, error);
                     });
@@ -948,7 +983,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const tasks = snapshot.val() ? snapshot.val() : [];
                         tasks.unshift({ task: taskText, completed: false, color: color, link: taskLink });
                         database.ref('todos/' + listUUID).update({ tasks });
-                        newTaskInput.value = '';
+                        if (newTaskInput) {
+                            newTaskInput.value = '';
+                        }
                         console.log('Task added:', taskText);
                     });
                 }
@@ -961,7 +998,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const lists = snapshot.val() ? snapshot.val() : [];
                         lists.unshift({ name: sublistName, alias: sublistName });
                         database.ref('todos/' + listUUID).update({ lists });
-                        newTaskInput.value = '';
+                        if (newTaskInput) {
+                            newTaskInput.value = '';
+                        }
                         console.log('List added:', sublistName);
                     });
                 }
@@ -1046,8 +1085,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         const uuidInput = document.getElementById('list-uuid');
                         
                         // Set the alias and UUID in the settings modal
-                        aliasInput.value = data.alias || '';
-                        uuidInput.value = currentList;
+                        if (aliasInput) {
+                            aliasInput.value = data.alias || '';
+                        }
+                        if (uuidInput) {
+                            uuidInput.value = currentList;
+                        }
 
                         colorOrder.forEach((color, index) => {
                             const colorInput = Array.from(colorInputs).find(input => input.getAttribute('data-color') === color);
@@ -1062,33 +1105,41 @@ document.addEventListener('DOMContentLoaded', () => {
             const updateStarButtonState = (listUUID) => {
                 const favoriteList = localStorage.getItem('favoriteList');
                 if (favoriteList === listUUID) {
-                    starButton.classList.add('blue');
+                    if (starButton) {
+                        starButton.classList.add('blue');
+                    }
                 } else {
-                    starButton.classList.remove('blue');
+                    if (starButton) {
+                        starButton.classList.remove('blue');
+                    }
                 }
             };
 
-            starButton.addEventListener('click', () => {
-                const favoriteList = localStorage.getItem('favoriteList');
-                if (favoriteList === currentList) {
-                    localStorage.removeItem('favoriteList');
-                } else {
-                    localStorage.setItem('favoriteList', currentList);
-                }
-                updateStarButtonState(currentList);
-            });
+            if (starButton) {
+                starButton.addEventListener('click', () => {
+                    const favoriteList = localStorage.getItem('favoriteList');
+                    if (favoriteList === currentList) {
+                        localStorage.removeItem('favoriteList');
+                    } else {
+                        localStorage.setItem('favoriteList', currentList);
+                    }
+                    updateStarButtonState(currentList);
+                });
+            }
 
-            homeButton.addEventListener('click', () => {
-                const favoriteList = localStorage.getItem('favoriteList');
-                if (favoriteList) {
-                    localStorage.setItem('todoUUID', favoriteList);
-                    currentList = favoriteList;
-                    loadList(favoriteList);
-                    window.history.pushState({}, '', `/${favoriteList}`);
-                } else {
-                    alert('No favorite list set.');
-                }
-            });
+            if (homeButton) {
+                homeButton.addEventListener('click', () => {
+                    const favoriteList = localStorage.getItem('favoriteList');
+                    if (favoriteList) {
+                        localStorage.setItem('todoUUID', favoriteList);
+                        currentList = favoriteList;
+                        loadList(favoriteList);
+                        window.history.pushState({}, '', `/${favoriteList}`);
+                    } else {
+                        alert('No favorite list set.');
+                    }
+                });
+            }
 
             const params = new URLSearchParams(window.location.search);
             const listFromUrl = window.location.pathname.split('/')[1];
@@ -1099,184 +1150,109 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (currentList) {
                 console.log(`Current list: ${currentList}`);
-                loginDiv.style.display = 'none';
-                todoListDiv.style.display = 'block';
                 loadList(currentList);
             } else {
-                loginDiv.style.display = 'block';
-                todoListDiv.style.display = 'none';
+                if (loginDiv) {
+                    loginDiv.style.display = 'block';
+                }
+                if (todoListDiv) {
+                    todoListDiv.style.display = 'none';
+                }
             }
 
-            listNameInput.addEventListener('input', () => {
-                listNameInput.value = listNameInput.value.toLowerCase();
-            });
-
-            listNameInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    loadListButton.click();
-                }
-            });
-
-            newTaskInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    addTaskIcon.click();
-                }
-            });
-
-            loadListButton.addEventListener('click', () => {
-                const alias = listNameInput.value.trim().toLowerCase();
-                console.log(`Load/Create List button clicked: ${alias}`);
-                if (alias) {
-                    fetch('/generate-uuid', {
-                        method: 'POST'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        const listUUID = data.uuid;
-                        console.log(`Generated UUID: ${listUUID}`);
-                        database.ref('todos/' + listUUID).once('value').then((snapshot) => {
-                            if (snapshot.exists()) {
-                                console.log('List exists:', listUUID);
-                                localStorage.setItem('todoUUID', listUUID);
-                                currentList = listUUID;
-                                loginDiv.style.display = 'none';
-                                todoListDiv.style.display = 'block';
-                                loadList(listUUID);
-                                window.history.pushState({}, '', `/${listUUID}`);
-                            } else {
-                                console.log('List does not exist, creating:', listUUID);
-                                createList(alias);
-                                localStorage.setItem('todoUUID', listUUID);
-                                currentList = listUUID;
-                                loginDiv.style.display = 'none';
-                                todoListDiv.style.display = 'block';
-                                window.history.pushState({}, '', `/${listUUID}`);
-                            }
-                        });
-                    });
-                }
-            });
-
-            addTaskIcon.addEventListener('click', () => {
-                const taskText = newTaskInput.value.trim();
-                if (taskText !== "" && isValidTask(taskText)) {
-                    console.log(`Selected color before adding task: ${selectedColor}`);
-                    addTask(currentList, taskText, selectedColor);
-                } else if (taskText === "") {
-                    alert("Task cannot be empty");
-                }
-            });
-
-            addListIcon.addEventListener('click', () => {
-                const listText = newTaskInput.value.trim();
-                if (listText !== "") {
-                    addList(currentList, listText);
-                } else if (listText === "") {
-                    alert("List name cannot be empty");
-                }
-            });
-
-            changeListButton.addEventListener('click', () => {
-                localStorage.removeItem('todoUUID');
-                currentList = null;
-                loginDiv.style.display = 'block';
-                todoListDiv.style.display = 'none';
-
-                if (currentListRef) {
-                    currentListRef.off();
-                    currentListRef = null;
-                }
-            });
-
-            sortTasksSlider.addEventListener('change', () => {
-                database.ref('todos/' + currentList).once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    const tasks = data.tasks;
-                    const lists = data.lists;
-                    const colorOrder = data.colorOrder || Object.keys(colors);
-                    const showLists = data.showLists !== undefined ? data.showLists : true;
-                    renderTasksAndLists(tasks, lists, colorOrder, showLists);
+            if (listNameInput) {
+                listNameInput.addEventListener('input', () => {
+                    listNameInput.value = listNameInput.value.toLowerCase();
                 });
-            });
 
-            sortCompletedSlider.addEventListener('change', () => {
-                database.ref('todos/' + currentList).once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    const tasks = data.tasks;
-                    const lists = data.lists;
-                    const colorOrder = data.colorOrder || Object.keys(colors);
-                    const showLists = data.showLists !== undefined ? data.showLists : true;
-                    renderTasksAndLists(tasks, lists, colorOrder, showLists);
+                listNameInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        loadListButton.click();
+                    }
                 });
-            });
+            }
 
-            sortColorSlider.addEventListener('change', () => {
-                database.ref('todos/' + currentList).once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    const tasks = data.tasks;
-                    const lists = data.lists;
-                    const colorOrder = data.colorOrder || Object.keys(colors);
-                    const showLists = data.showLists !== undefined ? data.showLists : true;
+            if (newTaskInput) {
+                newTaskInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        addTaskIcon.click();
+                    }
+                });
+            }
 
-                    if (sortColorSlider.checked) {
-                        tasks.sort((a, b) => {
-                            const aColorIndex = colorOrder.indexOf(a.color);
-                            const bColorIndex = colorOrder.indexOf(b.color);
-
-                            if (aColorIndex === -1 && bColorIndex === -1) {
-                                return 0;
-                            } else if (aColorIndex === -1) {
-                                return 1;
-                            } else if (bColorIndex === -1) {
-                                return -1;
-                            } else {
-                                return aColorIndex - bColorIndex;
-                            }
+            if (loadListButton) {
+                loadListButton.addEventListener('click', () => {
+                    const alias = listNameInput.value.trim().toLowerCase();
+                    console.log(`Load/Create List button clicked: ${alias}`);
+                    if (alias) {
+                        fetch('/generate-uuid', {
+                            method: 'POST'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            const listUUID = data.uuid;
+                            console.log(`Generated UUID: ${listUUID}`);
+                            database.ref('todos/' + listUUID).once('value').then((snapshot) => {
+                                if (snapshot.exists()) {
+                                    console.log('List exists:', listUUID);
+                                    localStorage.setItem('todoUUID', listUUID);
+                                    currentList = listUUID;
+                                    if (loginDiv) {
+                                        loginDiv.style.display = 'none';
+                                    }
+                                    if (todoListDiv) {
+                                        todoListDiv.style.display = 'block';
+                                    }
+                                    loadList(listUUID);
+                                    window.history.pushState({}, '', `/${listUUID}`);
+                                } else {
+                                    console.log('List does not exist, creating:', listUUID);
+                                    createList(alias);
+                                }
+                            });
                         });
                     }
-
-                    renderTasksAndLists(tasks, lists, colorOrder, showLists);
                 });
-            });
+            }
 
-            sortDateSlider.addEventListener('change', () => {
-                database.ref('todos/' + currentList).once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    const tasks = data.tasks;
-                    const lists = data.lists;
-                    const colorOrder = data.colorOrder || Object.keys(colors);
-                    const showLists = data.showLists !== undefined ? data.showLists : true;
-                    renderTasksAndLists(tasks, lists, colorOrder, showLists);
+            if (addTaskIcon) {
+                addTaskIcon.addEventListener('click', () => {
+                    const taskText = newTaskInput.value.trim();
+                    if (taskText !== "" && isValidTask(taskText)) {
+                        console.log(`Selected color before adding task: ${selectedColor}`);
+                        addTask(currentList, taskText, selectedColor);
+                    } else if (taskText === "") {
+                        alert("Task cannot be empty");
+                    }
                 });
-            });
+            }
 
-            sortListsSlider.addEventListener('change', () => {
-                const showLists = sortListsSlider.checked;
-                updateShowLists(currentList, showLists);
-                database.ref('todos/' + currentList).once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    const tasks = data.tasks;
-                    const lists = data.lists;
-                    const colorOrder = data.colorOrder || Object.keys(colors);
-                    renderTasksAndLists(tasks, lists, colorOrder, showLists);
+            if (addListIcon) {
+                addListIcon.addEventListener('click', () => {
+                    const listText = newTaskInput.value.trim();
+                    if (listText !== "") {
+                        addList(currentList, listText);
+                    } else if (listText === "") {
+                        alert("List name cannot be empty");
+                    }
                 });
-            });
+            }
 
-            closeModalButton.addEventListener('click', () => {
-                modal.style.display = 'none';
-            });
+            if (changeListButton) {
+                changeListButton.addEventListener('click', () => {
+                    localStorage.removeItem('todoUUID');
+                    currentList = null;
+                    window.location.href = "/";
 
-            window.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
+                    if (currentListRef) {
+                        currentListRef.off();
+                        currentListRef = null;
+                    }
+                });
+            }
 
-            saveTaskButton.addEventListener('click', () => {
-                const newTaskText = editTaskInput.value.trim();
-                if (newTaskText !== "" && isValidTask(newTaskText)) {
-                    updateTask(currentList, editTaskIndex, newTaskText, selectedEditColor);
-                    modal.style.display = 'none';
+            if (sortTasksSlider) {
+                sortTasksSlider.addEventListener('change', () => {
                     database.ref('todos/' + currentList).once('value', (snapshot) => {
                         const data = snapshot.val();
                         const tasks = data.tasks;
@@ -1285,46 +1261,167 @@ document.addEventListener('DOMContentLoaded', () => {
                         const showLists = data.showLists !== undefined ? data.showLists : true;
                         renderTasksAndLists(tasks, lists, colorOrder, showLists);
                     });
-                } else if (newTaskText === "") {
-                    alert("Task cannot be empty");
+                });
+            }
+
+            if (sortCompletedSlider) {
+                sortCompletedSlider.addEventListener('change', () => {
+                    database.ref('todos/' + currentList).once('value', (snapshot) => {
+                        const data = snapshot.val();
+                        const tasks = data.tasks;
+                        const lists = data.lists;
+                        const colorOrder = data.colorOrder || Object.keys(colors);
+                        const showLists = data.showLists !== undefined ? data.showLists : true;
+                        renderTasksAndLists(tasks, lists, colorOrder, showLists);
+                    });
+                });
+            }
+
+            if (sortColorSlider) {
+                sortColorSlider.addEventListener('change', () => {
+                    database.ref('todos/' + currentList).once('value', (snapshot) => {
+                        const data = snapshot.val();
+                        const tasks = data.tasks;
+                        const lists = data.lists;
+                        const colorOrder = data.colorOrder || Object.keys(colors);
+                        const showLists = data.showLists !== undefined ? data.showLists : true;
+
+                        if (sortColorSlider.checked) {
+                            tasks.sort((a, b) => {
+                                const aColorIndex = colorOrder.indexOf(a.color);
+                                const bColorIndex = colorOrder.indexOf(b.color);
+
+                                if (aColorIndex === -1 && bColorIndex === -1) {
+                                    return 0;
+                                } else if (aColorIndex === -1) {
+                                    return 1;
+                                } else if (bColorIndex === -1) {
+                                    return -1;
+                                } else {
+                                    return aColorIndex - bColorIndex;
+                                }
+                            });
+                        }
+
+                        renderTasksAndLists(tasks, lists, colorOrder, showLists);
+                    });
+                });
+            }
+
+            if (sortDateSlider) {
+                sortDateSlider.addEventListener('change', () => {
+                    database.ref('todos/' + currentList).once('value', (snapshot) => {
+                        const data = snapshot.val();
+                        const tasks = data.tasks;
+                        const lists = data.lists;
+                        const colorOrder = data.colorOrder || Object.keys(colors);
+                        const showLists = data.showLists !== undefined ? data.showLists : true;
+                        renderTasksAndLists(tasks, lists, colorOrder, showLists);
+                    });
+                });
+            }
+
+            if (sortListsSlider) {
+                sortListsSlider.addEventListener('change', () => {
+                    const showLists = sortListsSlider.checked;
+                    updateShowLists(currentList, showLists);
+                    database.ref('todos/' + currentList).once('value', (snapshot) => {
+                        const data = snapshot.val();
+                        const tasks = data.tasks;
+                        const lists = data.lists;
+                        const colorOrder = data.colorOrder || Object.keys(colors);
+                        renderTasksAndLists(tasks, lists, colorOrder, showLists);
+                    });
+                });
+            }
+
+            if (closeModalButton) {
+                closeModalButton.addEventListener('click', () => {
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+
+            window.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
                 }
             });
 
-            settingsIcon.addEventListener('click', () => {
-                loadSettings();
-                settingsModal.style.display = 'block';
-            });
+            if (saveTaskButton) {
+                saveTaskButton.addEventListener('click', () => {
+                    const newTaskText = editTaskInput.value.trim();
+                    if (newTaskText !== "" && isValidTask(newTaskText)) {
+                        updateTask(currentList, editTaskIndex, newTaskText, selectedEditColor);
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                        database.ref('todos/' + currentList).once('value', (snapshot) => {
+                            const data = snapshot.val();
+                            const tasks = data.tasks;
+                            const lists = data.lists;
+                            const colorOrder = data.colorOrder || Object.keys(colors);
+                            const showLists = data.showLists !== undefined ? data.showLists : true;
+                            renderTasksAndLists(tasks, lists, colorOrder, showLists);
+                        });
+                    } else if (newTaskText === "") {
+                        alert("Task cannot be empty");
+                    }
+                });
+            }
 
-            closeSettingsModalButton.addEventListener('click', () => {
-                settingsModal.style.display = 'none';
-            });
+            if (settingsIcon) {
+                settingsIcon.addEventListener('click', () => {
+                    loadSettings();
+                    if (settingsModal) {
+                        settingsModal.style.display = 'block';
+                    }
+                });
+            }
+
+            if (closeSettingsModalButton) {
+                closeSettingsModalButton.addEventListener('click', () => {
+                    if (settingsModal) {
+                        settingsModal.style.display = 'none';
+                    }
+                });
+            }
 
             window.addEventListener('click', (event) => {
                 if (event.target === settingsModal) {
-                    settingsModal.style.display = 'none';
+                    if (settingsModal) {
+                        settingsModal.style.display = 'none';
+                    }
                 }
             });
 
-            saveSettingsButton.addEventListener('click', () => {
-                const colorInputs = document.querySelectorAll('.color-item input');
-                const aliasInput = document.getElementById('list-alias');
-                const newColorOrder = Array.from(colorInputs).sort((a, b) => a.value - b.value).map(input => input.getAttribute('data-color'));
+            if (saveSettingsButton) {
+                saveSettingsButton.addEventListener('click', () => {
+                    const colorInputs = document.querySelectorAll('.color-item input');
+                    const aliasInput = document.getElementById('list-alias');
+                    const newColorOrder = Array.from(colorInputs).sort((a, b) => a.value - b.value).map(input => input.getAttribute('data-color'));
 
-                const newAlias = aliasInput.value.trim();
-                if (newAlias) {
-                    database.ref('todos/' + currentList).update({ alias: newAlias });
-                }
-                
-                updateColorOrder(currentList, newColorOrder);
-                settingsModal.style.display = 'none';
-                database.ref('todos/' + currentList).once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    const tasks = data.tasks;
-                    const lists = data.lists;
-                    const showLists = data.showLists !== undefined ? data.showLists : true;
-                    renderTasksAndLists(tasks, lists, newColorOrder, showLists);
+                    const newAlias = aliasInput.value.trim();
+                    if (newAlias) {
+                        database.ref('todos/' + currentList).update({ alias: newAlias });
+                    }
+                    
+                    updateColorOrder(currentList, newColorOrder);
+                    if (settingsModal) {
+                        settingsModal.style.display = 'none';
+                    }
+                    database.ref('todos/' + currentList).once('value', (snapshot) => {
+                        const data = snapshot.val();
+                        const tasks = data.tasks;
+                        const lists = data.lists;
+                        const showLists = data.showLists !== undefined ? data.showLists : true;
+                        renderTasksAndLists(tasks, lists, newColorOrder, showLists);
+                    });
                 });
-            });
+            }
 
             function rgbToHex(rgb) {
                 const result = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(rgb);
@@ -1344,3 +1441,4 @@ document.addEventListener('DOMContentLoaded', () => {
     </script>
 </body>
 </html>
+

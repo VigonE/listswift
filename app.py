@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 import os
 import uuid
 from dotenv import load_dotenv
@@ -10,7 +10,7 @@ load_dotenv()
 
 @app.route("/")
 def home():
-    return render_template('todolist.html')
+    return render_template('todolist.html', list_loaded=False)
 
 @app.route("/firebase-config")
 def firebase_config():
@@ -32,7 +32,7 @@ def generate_uuid():
 
 @app.route("/<uuid:list_uuid>")
 def list_page(list_uuid):
-    return render_template('todolist.html')
+    return render_template('todolist.html', list_loaded=True, list_uuid=list_uuid)
 
 if __name__ == "__main__":
     app.run(debug=True)
