@@ -14,7 +14,7 @@
             background-color: #f0f0f0;
             margin: 0;
         }
-         
+        
         #app {
             background: white;
             padding: 20px;
@@ -627,6 +627,7 @@
                     <input type="number" value="9" min="1" max="9" data-color="grey">
                 </div>
             </div>
+            <button id="delete-list">Delete List</button>
             <button id="save-settings">Save Settings</button>
         </div>
     </div>
@@ -838,45 +839,6 @@
                     if (tasksUl) {
                         tasksUl.innerHTML = '';
                     }
-                    if (showLists) {
-                        lists.forEach((list, index) => {
-                            const li = document.createElement('li');
-                            li.setAttribute('data-index', index);
-                            li.setAttribute('data-type', 'list');
-                            const taskContainer = document.createElement('div');
-                            taskContainer.className = 'task-container';
-                            const taskText = document.createElement('span');
-                            const alias = list.alias || list.name;
-                            taskText.innerHTML = `${alias} <small>(${list.name})</small>`;
-                            taskText.style.fontWeight = 'bold';
-                            taskText.style.cursor = 'pointer';
-                            taskText.addEventListener('click', () => {
-                                localStorage.setItem('todoUUID', list.name);
-                                currentList = list.name;
-                                loadList(list.name);
-                            });
-    
-                            const editButton = document.createElement('button');
-                            editButton.innerHTML = '✎';
-                            editButton.addEventListener('click', () => {
-                                const newAlias = prompt("Enter new alias for the list:", alias);
-                                if (newAlias !== null && newAlias.trim() !== "") {
-                                    updateListAlias(currentList, index, newAlias);
-                                }
-                            });
-                            const deleteButton = document.createElement('button');
-                            deleteButton.textContent = '✖';
-                            deleteButton.className = 'delete-task';
-                            deleteButton.addEventListener('click', () => deleteList(currentList, index));
-                            taskContainer.appendChild(taskText);
-                            taskContainer.appendChild(editButton);
-                            taskContainer.appendChild(deleteButton);
-                            li.appendChild(taskContainer);
-                            if (tasksUl) {
-                                tasksUl.appendChild(li);
-                            }
-                        });
-                    }
                     tasks.forEach((task, index) => {
                         const li = document.createElement('li');
                         const actualIndex = (sortTasksSlider && sortTasksSlider.checked) || (sortCompletedSlider && sortCompletedSlider.checked) || (sortColorSlider && sortColorSlider.checked) || (sortDateSlider && sortDateSlider.checked) ? task.originalIndex : index;
@@ -994,58 +956,6 @@
                     }
                 };
     
-                const addList = (listUUID, sublistName) => {
-                    if (sublistName) {
-                        console.log(`Adding list: ${sublistName}`);
-                        database.ref('todos/' + sublistName).once('value', (snapshot) => {
-                            if (snapshot.exists()) {
-                                // List exists
-                                console.log('List exists:', sublistName);
-                                database.ref('todos/' + listUUID + '/lists').once('value', (listSnapshot) => {
-                                    const lists = listSnapshot.val() ? listSnapshot.val() : [];
-                                    lists.unshift({ name: sublistName, alias: sublistName });
-                                    database.ref('todos/' + listUUID).update({ lists });
-                                    if (newTaskInput) {
-                                        newTaskInput.value = '';
-                                    }
-                                    console.log('List added:', sublistName);
-                                });
-                            } else {
-                                // List does not exist, create a new one
-                                console.log('List does not exist, creating:', sublistName);
-                                fetch('/generate-uuid', {
-                                    method: 'POST'
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    const newUUID = data.uuid;
-                                    console.log(`Generated UUID for new list: ${newUUID}`);
-                                    database.ref('todos/' + newUUID).set({
-                                        tasks: [],
-                                        lists: [],
-                                        colorOrder: Object.keys(colors),
-                                        showLists: true,
-                                        alias: sublistName
-                                    }).then(() => {
-                                        console.log(`New list created with UUID: ${newUUID}`);
-                                        database.ref('todos/' + listUUID + '/lists').once('value', (listSnapshot) => {
-                                            const lists = listSnapshot.val() ? listSnapshot.val() : [];
-                                            lists.unshift({ name: newUUID, alias: sublistName });
-                                            database.ref('todos/' + listUUID).update({ lists });
-                                            if (newTaskInput) {
-                                                newTaskInput.value = '';
-                                            }
-                                            console.log('New list added to current list:', newUUID);
-                                        });
-                                    }).catch((error) => {
-                                        console.error(`Error creating new list: ${newUUID}`, error);
-                                    });
-                                });
-                            }
-                        });
-                    }
-                };
-    
                 const deleteTask = (listUUID, index) => {
                     console.log(`Deleting task: ${index}`);
                     database.ref('todos/' + listUUID + '/tasks').once('value', (snapshot) => {
@@ -1053,26 +963,6 @@
                         tasks = tasks.filter((_, taskIndex) => taskIndex !== index);
                         database.ref('todos/' + listUUID).update({ tasks });
                         console.log('Task deleted:', index);
-                    });
-                };
-    
-                const deleteList = (listUUID, index) => {
-                    console.log(`Deleting list: ${index}`);
-                    database.ref('todos/' + listUUID + '/lists').once('value', (snapshot) => {
-                        let lists = snapshot.val();
-                        lists = lists.filter((_, listIndex) => listIndex !== index);
-                        database.ref('todos/' + listUUID).update({ lists });
-                        console.log('List deleted:', index);
-                    });
-                };
-    
-                const updateListAlias = (listUUID, index, alias) => {
-                    console.log(`Updating list alias: ${index} with alias: ${alias}`);
-                    database.ref('todos/' + listUUID + '/lists').once('value', (snapshot) => {
-                        const lists = snapshot.val();
-                        lists[index].alias = alias;
-                        database.ref('todos/' + listUUID).update({ lists });
-                        console.log('List alias updated:', lists[index]);
                     });
                 };
     
@@ -1477,33 +1367,50 @@
                 }
     
                 function convertTaskToList(currentList, taskText, taskIndex) {
-                    fetch('/generate-uuid', {
-                        method: 'POST'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        const newUUID = data.uuid;
-                        console.log(`Generated UUID for new list: ${newUUID}`);
-                        database.ref('todos/' + newUUID).set({
-                            tasks: [],
-                            lists: [],
-                            colorOrder: Object.keys(colors),
-                            showLists: true,
-                            alias: taskText
-                        }).then(() => {
-                            console.log(`New list created with UUID: ${newUUID}`);
-                            database.ref('todos/' + currentList + '/lists').once('value', (listSnapshot) => {
-                                const lists = listSnapshot.val() ? listSnapshot.val() : [];
-                                lists.unshift({ name: newUUID, alias: taskText });
-                                database.ref('todos/' + currentList).update({ lists });
-                                deleteTask(currentList, taskIndex);
-                                console.log('Task converted to list:', taskText);
+                    // Regular expression to match a UUID in the URL
+                    const urlRegex = new RegExp(`${window.location.origin}/[a-zA-Z0-9-]+$`);
+                    
+                    database.ref('todos/' + currentList + '/tasks').once('value', (snapshot) => {
+                        const tasks = snapshot.val() ? snapshot.val() : [];
+                        const task = tasks[taskIndex];
+
+                        if (task.link && urlRegex.test(task.link)) {
+                            // Task already contains a URL that matches the list URL format, remove the URL
+                            task.task = taskText;
+                            task.link = null; // Remove the link
+                            console.log(`Task ${taskText} already contains a list URL, removing the URL.`);
+                            database.ref('todos/' + currentList).update({ tasks });
+                            renderTasksAndLists(tasks, [], [], false);
+                        } else {
+                            // Task does not contain a matching URL, create a new list
+                            fetch('/generate-uuid', {
+                                method: 'POST'
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                const newUUID = data.uuid;
+                                console.log(`Generated UUID for new list: ${newUUID}`);
+                                database.ref('todos/' + newUUID).set({
+                                    tasks: [],
+                                    lists: [],
+                                    colorOrder: Object.keys(colors),
+                                    showLists: true,
+                                    alias: taskText // Use the task name as the alias for the new list
+                                }).then(() => {
+                                    console.log(`New list created with UUID: ${newUUID}`);
+                                    task.task = taskText; // Keep the task text unchanged
+                                    task.link = `${window.location.origin}/${newUUID}`; // Store the new list URL in the link property
+                                    database.ref('todos/' + currentList).update({ tasks });
+                                    renderTasksAndLists(tasks, [], [], false);
+                                    console.log('Task converted to list:', taskText);
+                                }).catch((error) => {
+                                    console.error(`Error creating new list: ${newUUID}`, error);
+                                });
                             });
-                        }).catch((error) => {
-                            console.error(`Error creating new list: ${newUUID}`, error);
-                        });
+                        }
                     });
                 }
+
             })
             .catch(error => console.error('Error fetching Firebase configuration:', error));
     });
@@ -1512,4 +1419,3 @@
 
 </body>
 </html>
-
